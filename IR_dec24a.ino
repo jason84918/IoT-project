@@ -1,7 +1,7 @@
 #include <Wire.h>
 #include <UnoWiFiDevEd.h>
 #define CONNECTOR "rest" // 連接器類型
-#define SERVER_ADDR "140.113.124.3" // 網站伺服器IP位址
+#define SERVER_ADDR "140.113.124.2" // 網站伺服器IP位址
 int r = 0; 
 String command = "/rn?r=";   // 傳給網站伺服器的路徑參數
 String command2="/people?r=";
@@ -10,8 +10,7 @@ int irpin=7;
 int irpin2=8;
 int obstacle1=HIGH; //means no obstacle 
 int obstacle2=HIGH;
-int counter=0;
-int counter2=0;
+int state=0; //state{init,coming,leaving.come.leave}
 void setup() {
   // put your setup code here, to run once:
    pinMode(LED,OUTPUT);
@@ -28,34 +27,40 @@ void loop() {
     obstacle1=digitalRead(irpin);
     obstacle2=digitalRead(irpin2);
     if(obstacle1==LOW){
-      if(counter==0) counter=1;
-      if(counter2==1) counter2=2;
+      if(state==0) state=1;
+      else if(state==1) state=1;
+      else if(state==2) state=4;
     }
     if(obstacle2==LOW){
-      if(counter==1) counter=2;
-      if(counter2==0) counter2=1;  
+      if(state==0) state=2;
+      else if(state==2) state=2;
+      else if(state==1) state=3;  
+      /*Serial.print("counter: ");
+      Serial.println(counter);
+      Serial.print("counter2: ");
+      Serial.println(counter2);*/
     }
-    if(counter==2){
-      //go in 
+    if(state==3){
+      //go in
+      Serial.println("go in");
       r=1;
       CiaoData data=Ciao.write(CONNECTOR, SERVER_ADDR, command2+r);
       if(!data.isEmpty()){
-          Serial.println(String(data.get(2)));
+        Serial.println(String(data.get(2)));
       }
       else Serial.println("???");
-      counter=0;
-      counter2=0;
-    }
-    if(counter2==2){
+      state=0;
+      }
+    if(state==4){
       //go out
+      Serial.println("go out");
       r=-1;
       CiaoData data=Ciao.write(CONNECTOR, SERVER_ADDR, command2+r);
       if(!data.isEmpty()){
-          Serial.println(String(data.get(2)));
+        Serial.println(String(data.get(2)));
       }
       else Serial.println("???");
-      counter=0;
-      counter2=0;   
+      state=0;
     }
     delay(500);
 }
